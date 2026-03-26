@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>次方與根號計算</title>
+</head>
+<body>
+    <h2>次方與根號計算</h2>
+    <form action="/math" method="POST">
+        <label>x: </label>
+        <input type="text" name="x" required><br><br>
+
+        <label>運算: </label>
+        <select name="opt">
+            <option value="∧">∧ (次方)</option>
+            <option value="√">√ (根號)</option>
+        </select><br><br>
+
+        <label>y: </label>
+        <input type="text" name="y" required><br><br>
+
+        <input type="submit" value="計算">
+    </form>
+    <br><hr>
+    <a href="/">返回首頁</a>
+</body>
+</html>
