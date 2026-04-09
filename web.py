@@ -4,7 +4,7 @@ app = Flask(__name__)
 
 @app.route("/")
 def index():
-    link = "<h1>歡迎進入林建宇的網站</h1>"
+    link = "<h1>歡迎進入林建宇的網站20260409</h1>"
     link += "<a href = /mis>課程</a><hr>"
     link += "<a href = /today>現在時間日期</a><hr>"
     link += "<a href = /me>關於我</a><hr>"
