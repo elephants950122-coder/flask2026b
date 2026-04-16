@@ -1,3 +1,6 @@
+import requests
+from bs4 import BeautifulSoup
+
 from flask import Flask, render_template, request
 from datetime import datetime
 
@@ -30,19 +33,38 @@ def index():
     link += "<a href = /account>POST傳值(帳號密碼)</a><hr>"
     link += "<a href = /math>次方與根號運算</a><hr>"
     link += "<a href=/read>讀取Firestore資料</a><hr>"
-    link += "<a href=/read>讀取Firestore資料(關鍵字查詢)</a><hr>"
+    link += "<a href=/read2>讀取Firestore資料(關鍵字查詢)</a><hr>"
+    link += "<a href=/search>讀取Firestore資料(關鍵字查詢:input)</a><hr>"
     return link
+
+@app.route("/search", methods=["GET", "POST"])
+def search():
+    results = []
+    keyword = ""
+    if request.method == "POST":
+        keyword = request.form.get("keyword", "")
+        if keyword:
+            db = firestore.client()
+            collection_ref = db.collection("靜宜資管")
+            docs = collection_ref.get()
+            for doc in docs:
+                teacher = doc.to_dict()
+                # 模糊比對姓名
+                if keyword in teacher.get("name", ""):
+                    results.append(teacher) # 這裡把整包資料傳給 HTML
+    
+    return render_template("search.html", results=results, keyword=keyword)
 
 @app.route("/read2")
 def read2():
     Result = ""
-    keyword = "楊"
+    keyword = "李"
     db = firestore.client()
     collection_ref = db.collection("靜宜資管")    
     docs = collection_ref.get()    
     for doc in docs:   
         teacher = doc.to_dict()
-        if keyword in teacher["name"]      
+        if keyword in teacher["name"]:      
             Result += str(teacher) + "<br>"
 
     if Result == "":
