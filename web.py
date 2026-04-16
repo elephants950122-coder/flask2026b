@@ -35,24 +35,40 @@ def index():
     link += "<a href=/read>讀取Firestore資料</a><hr>"
     link += "<a href=/read2>讀取Firestore資料(關鍵字查詢)</a><hr>"
     link += "<a href=/search>讀取Firestore資料(關鍵字查詢:input)</a><hr>"
+    link += "<a href=/spider>爬取子青老師本學期課程</a><hr>"
     return link
+
+@app.route("/spider")
+def spider():
+    Result = ""
+    url = "https://www1.pu.edu.tw/~tcyang/course.html"
+    Data = requests.get(url)
+    Data.encoding = "utf-8"
+    sp = BeautifulSoup(Data.text, "html.parser")
+    result=sp.select(".team-box a")
+
+    for i in result:
+        Result += i.text + i.get("href") + "<br>"
+    return Result
 
 @app.route("/search", methods=["GET", "POST"])
 def search():
-    results = []
+    results = []  # 準備一個空清單來裝所有符合條件的老師
     keyword = ""
     if request.method == "POST":
         keyword = request.form.get("keyword", "")
         if keyword:
             db = firestore.client()
             collection_ref = db.collection("靜宜資管")
-            docs = collection_ref.get()
+            docs = collection_ref.get()  # 抓取所有文件
+            
             for doc in docs:
                 teacher = doc.to_dict()
-                # 模糊比對姓名
+                # 模糊比對：只要老師姓名裡包含關鍵字，就加入清單
                 if keyword in teacher.get("name", ""):
-                    results.append(teacher) # 這裡把整包資料傳給 HTML
+                    results.append(teacher)  # 這裡會不斷累積符合條件的人
     
+    # 將包含「多位老師」的清單傳給網頁
     return render_template("search.html", results=results, keyword=keyword)
 
 @app.route("/read2")
