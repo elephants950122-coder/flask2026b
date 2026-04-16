@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>靜宜資管老師查詢</title>
+    <style>
+        body { font-family: "Microsoft JhengHei", sans-serif; padding: 40px; line-height: 1.6; }
+        h2 { font-weight: bold; }
+        .search-form { margin-bottom: 20px; }
+        input[type="text"] { padding: 5px; border: 1px solid #999; width: 200px; }
+        button { padding: 5px 15px; cursor: pointer; border: 1px solid #999; background-color: #f0f0f0; }
+        hr { border: 0; border-top: 1px solid #ccc; margin: 20px 0; }
+        .result-section { margin-top: 20px; }
+        .teacher-name { color: #0000FF; font-weight: bold; text-decoration: underline; cursor: pointer; }
+        .office-num { font-weight: bold; }
+        .back-link { color: #888; text-decoration: none; font-size: 0.9em; margin-top: 20px; display: block; }
+    </style>
+</head>
+<body>
+
+    <h2>靜宜資管老師查詢</h2>
+
+    <div class="search-form">
+        <form method="POST" action="/search">
+            請輸入老師姓名關鍵字：
+            <input type="text" name="keyword" value="{{ keyword if keyword else '' }}">
+            <button type="submit">查詢</button>
+        </form>
+    </div>
+
+    <hr>
+
+    {% if keyword %}
+    <div class="result-section">
+        <h3>查詢結果 (關鍵字: {{ keyword }}):</h3>
+        
+        {% if results %}
+            {% for t in results %}
+                <p>
+                    <span class="teacher-name">{{ t.name }}</span> 
+                    老師的研究室是在 <span class="office-num">{{ t.lab }}</span>
+                </p>
+            {% endfor %}
+        {% else %}
+            <p>抱歉，查無此關鍵字姓名之老師資料</p>
+        {% endif %}
+        
+        <a href="/search" class="back-link">返回查詢</a>
+        <a href="/" class="back-link">返回首頁</a>
+    </div>
+    {% endif %}
+
+</body>
+</html>
