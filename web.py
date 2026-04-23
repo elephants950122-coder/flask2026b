@@ -1,11 +1,9 @@
-import requests
-from bs4 import BeautifulSoup
-
-from flask import Flask, render_template, request
-from datetime import datetime
-
 import os
 import json
+import requests
+from bs4 import BeautifulSoup
+from flask import Flask, render_template, request
+from datetime import datetime
 import firebase_admin
 from firebase_admin import credentials, firestore
 
@@ -26,30 +24,23 @@ app = Flask(__name__)
 @app.route("/")
 def index():
     link = "<h1>歡迎進入林建宇的網站20260409</h1>"
-    link += "<a href = /mis>課程</a><hr>"
-    link += "<a href = /today>現在時間日期</a><hr>"
-    link += "<a href = /me>關於我</a><hr>"
-    link += "<a href = /welcome?u=建宇&d=靜宜資管&c=資訊管理導論>Get傳值</a><hr>"
-    link += "<a href = /account>POST傳值(帳號密碼)</a><hr>"
-    link += "<a href = /math>次方與根號運算</a><hr>"
-    link += "<a href=/read>讀取Firestore資料</a><hr>"
-    link += "<a href=/read2>讀取Firestore資料(關鍵字查詢)</a><hr>"
-    link += "<a href=/search>讀取Firestore資料(關鍵字查詢:input)</a><hr>"
-    link += "<a href=/spider>爬取子青老師本學期課程</a><hr>"
-    link += "<a href=/movie1>爬取即將上映電影</a><hr>"
+    link += "<a href='/mis'>課程</a><hr>"
+    link += "<a href='/today'>現在時間日期</a><hr>"
+    link += "<a href='/me'>關於我</a><hr>"
+    link += "<a href='/welcome?u=建宇&d=靜宜資管&c=資訊管理導論'>Get傳值</a><hr>"
+    link += "<a href='/account'>POST傳值(帳號密碼)</a><hr>"
+    link += "<a href='/math'>次方與根號運算</a><hr>"
+    link += "<a href='/read'>讀取Firestore資料</a><hr>"
+    link += "<a href='/read2'>讀取Firestore資料(關鍵字查詢)</a><hr>"
+    link += "<a href='/search'>讀取Firestore資料(關鍵字查詢:input)</a><hr>"
+    link += "<a href='/spider'>爬取子青老師本學期課程</a><hr>"
+    link += "<a href='/movie1'>爬取即將上映電影</a><hr>"
     return link
 
-from flask import Flask, request
-import requests
-from bs4 import BeautifulSoup
-
-app = Flask(__name__)
 
 @app.route("/movie1")
 def movie1():
     # 1. 建立網頁上的「搜尋表單 (Search Form)」
-    # 這裡的 action="/movie1" 會將資料傳回這個同一個路由
-    # name="q" 代表我們等一下要用 "q" 這個變數名稱來接收輸入值
     search_form = """
     <h2>近期上映電影搜尋</h2>
     <form action="/movie1" method="GET">
@@ -59,27 +50,27 @@ def movie1():
     <hr>
     """
     
-    Result = search_form
+    result_html = search_form
     
     # 2. 透過 Flask 的 request 取得網頁表單傳來的關鍵字
     q = request.args.get("q", "")
     
     # 如果使用者還沒輸入任何東西，提示他輸入
     if not q:
-        Result += "請在上方輸入關鍵字，然後點擊搜尋。"
-        return Result
+        result_html += "請在上方輸入關鍵字，然後點擊搜尋。"
+        return result_html
 
     # 3. 開始爬蟲與資料處理
     url = "https://www.atmovies.com.tw/movie/next/"
     try:
-        Data = requests.get(url)
-        Data.encoding = "utf-8"
-        sp = BeautifulSoup(Data.text, "html.parser")
-        result = sp.select(".filmListAllX li")
+        response = requests.get(url)
+        response.encoding = "utf-8"
+        soup = BeautifulSoup(response.text, "html.parser")
+        movies = soup.select(".filmListAllX li")
         
         found_movie = False # 用來記錄有沒有找到電影
         
-        for item in result:
+        for item in movies:
             img_tag = item.find("img")
             a_tag = item.find("a")
             
@@ -90,41 +81,40 @@ def movie1():
                 # 4. 比對關鍵字
                 if q in movie_title:
                     found_movie = True
-                    introduce = "https://www.atmovies.com.tw" + a_tag.get("href", "")
-                    post = img_tag.get("src", "")
+                    movie_link = "https://www.atmovies.com.tw" + a_tag.get("href", "")
+                    poster_url = img_tag.get("src", "")
                     
                     # 避免圖片網址本身沒帶 https 的問題
-                    if not post.startswith("http"):
-                        post = "https://www.atmovies.com.tw" + post
+                    if not poster_url.startswith("http"):
+                        poster_url = "https://www.atmovies.com.tw" + poster_url
                     
-                    # 5. 組合 HTML 結果 (修正了引號與標籤格式)
-                    Result += f'<a href="{introduce}" target="_blank">{movie_title}</a><br>'
-                    Result += f'<img src="{post}" style="max-width: 200px; margin-top: 10px;"><br><br>'
+                    # 5. 組合 HTML 結果
+                    result_html += f'<a href="{movie_link}" target="_blank">{movie_title}</a><br>'
+                    result_html += f'<img src="{poster_url}" style="max-width: 200px; margin-top: 10px;"><br><br>'
                     
         # 如果跑完迴圈都沒有找到匹配的電影
         if not found_movie:
-            Result += f"找不到與「<strong>{q}</strong>」相關的電影。"
+            result_html += f"找不到與「<strong>{q}</strong>」相關的電影。"
 
     except Exception as e:
-        Result += f"爬蟲發生錯誤：{str(e)}"
+        result_html += f"爬蟲發生錯誤：{str(e)}"
         
-    return Result
+    return result_html
 
-if __name__ == "__main__":
-    app.run(debug=True, use_reloader=False)
 
 @app.route("/spider")
 def spider():
-    Result = ""
+    result_html = ""
     url = "https://www1.pu.edu.tw/~tcyang/course.html"
-    Data = requests.get(url)
-    Data.encoding = "utf-8"
-    sp = BeautifulSoup(Data.text, "html.parser")
-    result=sp.select(".team-box a")
+    response = requests.get(url)
+    response.encoding = "utf-8"
+    soup = BeautifulSoup(response.text, "html.parser")
+    course_links = soup.select(".team-box a")
 
-    for i in result:
-        Result += i.text + i.get("href") + "<br>"
-    return Result
+    for link in course_links:
+        result_html += link.text + link.get("href", "") + "<br>"
+    return result_html
+
 
 @app.route("/search", methods=["GET", "POST"])
 def search():
@@ -141,64 +131,71 @@ def search():
                 teacher = doc.to_dict()
                 # 模糊比對：只要老師姓名裡包含關鍵字，就加入清單
                 if keyword in teacher.get("name", ""):
-                    results.append(teacher)  # 這裡會不斷累積符合條件的人
+                    results.append(teacher)
     
-    # 將包含「多位老師」的清單傳給網頁
     return render_template("search.html", results=results, keyword=keyword)
+
 
 @app.route("/read2")
 def read2():
-    Result = ""
+    result_html = ""
     keyword = "李"
     db = firestore.client()
     collection_ref = db.collection("靜宜資管")    
     docs = collection_ref.get()    
+    
     for doc in docs:   
         teacher = doc.to_dict()
-        if keyword in teacher["name"]:      
-            Result += str(teacher) + "<br>"
+        if keyword in teacher.get("name", ""):      
+            result_html += str(teacher) + "<br>"
 
-    if Result == "":
-        Result = "抱歉，查無此關鍵字姓名之老師資料"    
-    return Result
+    if result_html == "":
+        result_html = "抱歉，查無此關鍵字姓名之老師資料"    
+    return result_html
+
 
 @app.route("/read")
 def read():
-    Result = ""
+    result_html = ""
     db = firestore.client()
     collection_ref = db.collection("靜宜資管")    
     docs = collection_ref.order_by("lab", direction=firestore.Query.DESCENDING).get()    
     for doc in docs:         
-        Result += str(doc.to_dict()) + "<br>"    
-    return Result
+        result_html += str(doc.to_dict()) + "<br>"    
+    return result_html
+
 
 @app.route("/mis")
 def course():
-    return "<h1>資訊管理導論</h1><a href=/>返回首頁</a>"
+    return "<h1>資訊管理導論</h1><a href='/'>返回首頁</a>"
+
 
 @app.route("/today")
 def today():
     now = datetime.now()
-    return render_template("today.html", datetime = str(now))
+    return render_template("today.html", datetime=str(now))
+
 
 @app.route("/me")
 def me():
     return render_template("mis2B.html")
 
-@app.route("/welcome", methods = ["GET"])
+
+@app.route("/welcome", methods=["GET"])
 def welcome():
     user = request.values.get("u")
     d = request.values.get("d")
     c = request.values.get("c")
-    return render_template("welcome.html", name = user, dep = d, course = c)
+    return render_template("welcome.html", name=user, dep=d, course=c)
+
 
 @app.route("/account", methods=["GET", "POST"])
 def account():
     if request.method == "POST":
-        user = request.form["user"]
-        pwd = request.form["pwd"]
-        result = "您輸入的帳號是：" + user + "; 密碼為：" + pwd 
-        return result
+        user = request.form.get("user", "")
+        pwd = request.form.get("pwd", "")
+        result_html = f"您輸入的帳號是：{user}; 密碼為：{pwd}" 
+        return result_html
     else:
         return render_template("account.html")
 
@@ -207,12 +204,10 @@ def account():
 def math():
     if request.method == "POST":
         try:
-            # 對應你的 int(input())，從網頁表單取得資料並轉為整數
             x = int(request.form["x"])
             y = int(request.form["y"])
             opt = request.form["opt"]
 
-            # 你的運算邏輯 (已修正 y=0 的 bug)
             if opt == "∧":
                 result = x ** y
             elif opt == "√":
@@ -223,7 +218,6 @@ def math():
             else:
                 result = "請輸入 ∧ 或 √"
             
-            # 將結果顯示在網頁上
             return f"計算結果：{result} <br><br><a href='/math'>繼續計算</a> | <a href='/'>回首頁</a>"
             
         except ValueError:
@@ -231,5 +225,7 @@ def math():
     else:
         return render_template("math.html")
 
+
+# 確保伺服器執行的程式碼只出現在整份檔案的最尾端
 if __name__ == "__main__":
     app.run(debug=True)
