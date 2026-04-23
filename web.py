@@ -111,7 +111,7 @@ def movie1():
     return Result
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, use_reloader=False)
 
 @app.route("/spider")
 def spider():
