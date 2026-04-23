@@ -39,20 +39,79 @@ def index():
     link += "<a href=/movie1>爬取即將上映電影</a><hr>"
     return link
 
+from flask import Flask, request
+import requests
+from bs4 import BeautifulSoup
+
+app = Flask(__name__)
+
 @app.route("/movie1")
 def movie1():
-    Result = ""
+    # 1. 建立網頁上的「搜尋表單 (Search Form)」
+    # 這裡的 action="/movie1" 會將資料傳回這個同一個路由
+    # name="q" 代表我們等一下要用 "q" 這個變數名稱來接收輸入值
+    search_form = """
+    <h2>近期上映電影搜尋</h2>
+    <form action="/movie1" method="GET">
+        <input type="text" name="q" placeholder="請輸入片名關鍵字" style="padding: 5px; font-size: 16px;">
+        <button type="submit" style="padding: 5px 10px; font-size: 16px;">搜尋</button>
+    </form>
+    <hr>
+    """
+    
+    Result = search_form
+    
+    # 2. 透過 Flask 的 request 取得網頁表單傳來的關鍵字
+    q = request.args.get("q", "")
+    
+    # 如果使用者還沒輸入任何東西，提示他輸入
+    if not q:
+        Result += "請在上方輸入關鍵字，然後點擊搜尋。"
+        return Result
+
+    # 3. 開始爬蟲與資料處理
     url = "https://www.atmovies.com.tw/movie/next/"
-    Data = requests.get(url)
-    Data.encoding = "utf-8"
-    #print(Data.text)
-    sp = BeautifulSoup(Data.text, "html.parser")
-    result=sp.select(".filmListAllX li")
-    for item in result:
-        Result += (item.find("img").get("alt")) + "<br>"
-        Result += ("https://www.atmovies.com.tw" + item.find("a").get("href")) + "<br>"
-        Result += ("https://www.atmovies.com.tw" + item.find("img").get("src")) + "<br><br>"
+    try:
+        Data = requests.get(url)
+        Data.encoding = "utf-8"
+        sp = BeautifulSoup(Data.text, "html.parser")
+        result = sp.select(".filmListAllX li")
+        
+        found_movie = False # 用來記錄有沒有找到電影
+        
+        for item in result:
+            img_tag = item.find("img")
+            a_tag = item.find("a")
+            
+            # 確保有抓到標籤再繼續，避免程式崩潰
+            if img_tag and a_tag:
+                movie_title = img_tag.get("alt", "")
+                
+                # 4. 比對關鍵字
+                if q in movie_title:
+                    found_movie = True
+                    introduce = "https://www.atmovies.com.tw" + a_tag.get("href", "")
+                    post = img_tag.get("src", "")
+                    
+                    # 避免圖片網址本身沒帶 https 的問題
+                    if not post.startswith("http"):
+                        post = "https://www.atmovies.com.tw" + post
+                    
+                    # 5. 組合 HTML 結果 (修正了引號與標籤格式)
+                    Result += f'<a href="{introduce}" target="_blank">{movie_title}</a><br>'
+                    Result += f'<img src="{post}" style="max-width: 200px; margin-top: 10px;"><br><br>'
+                    
+        # 如果跑完迴圈都沒有找到匹配的電影
+        if not found_movie:
+            Result += f"找不到與「<strong>{q}</strong>」相關的電影。"
+
+    except Exception as e:
+        Result += f"爬蟲發生錯誤：{str(e)}"
+        
     return Result
+
+if __name__ == "__main__":
+    app.run(debug=True)
 
 @app.route("/spider")
 def spider():
