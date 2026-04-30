@@ -35,8 +35,82 @@ def index():
     link += "<a href='/search'>讀取Firestore資料(關鍵字查詢:input)</a><hr>"
     link += "<a href='/spider'>爬取子青老師本學期課程</a><hr>"
     link += "<a href='/movie1'>爬取即將上映電影</a><hr>"
-    link += "<a href='/spiderMovie'>爬取即將上映電影</a><hr>"
+    link += "<a href='/spiderMovie'>爬取即將上映電影並存入資料庫</a><hr>"
+    link += "<a href='/searchMovie'>從資料庫搜尋電影</a><hr>"
     return link
+
+@app.route("/searchMovie")
+def searchMovie():
+    db = firestore.client()
+    collection_ref = db.collection("電影2B")
+    docs = collection_ref.get()
+    total_movies = len(docs)
+
+    search_form = f"""
+    <style>
+        body {{
+            text-align: center;
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 30px auto;
+        }}
+        img {{
+            border-radius: 10px;
+            box-shadow: 2px 2px 8px rgba(0,0,0,0.2);
+        }}
+    </style>
+    <h2>資料庫電影搜尋</h2>
+    <h4 style="color: #d9534f;">目前資料庫中共有 {total_movies} 筆電影資料</h4>
+    <form action="/searchMovie" method="GET">
+        <input type="text" name="q" placeholder="請輸入片名關鍵字" style="padding: 8px; font-size: 16px; width: 60%;">
+        <button type="submit" style="padding: 8px 15px; font-size: 16px; cursor: pointer;">搜尋</button>
+    </form>
+    <br><a href="/" style="text-decoration: none; color: gray;">← 回首頁</a>
+    <hr>
+    """
+    
+    result_html = search_form
+    keyword = request.args.get("q", "")
+    
+    # ⚠️ 這裡我們把原本的「if not keyword: return...」整段拿掉了！
+
+    count = 0  
+    last_update_str = ""  
+    movie_results_html = "" 
+    
+    for doc in docs:
+        movie_data = doc.to_dict()
+        title = movie_data.get("title", "")
+        
+        # ✨ 關鍵修改：如果 keyword 為空字串，或者 keyword 包含在 title 中，就放行！
+        if not keyword or keyword in title:
+            count += 1 
+            if not last_update_str:
+                last_update_str = movie_data.get("lastUpdate", "未知")
+            
+            movie_id = doc.id
+            picture = movie_data.get("picture", "")
+            hyperlink = movie_data.get("hyperlink", "")
+            showDate = movie_data.get("showDate", "")
+            
+            movie_results_html += f"<p><b>編號：</b>{movie_id}</p>"
+            movie_results_html += f"<h3><a href='{hyperlink}' target='_blank' style='color: #2c3e50;'>{title}</a></h3>"
+            movie_results_html += f"<p style='color: #7f8c8d;'><b>上映日期：</b>{showDate}</p>"
+            movie_results_html += f"<img src='{picture}' style='max-width: 250px; margin-top: 10px;'><br><br><hr>"
+            
+    if count > 0:
+        # 根據是不是有輸入關鍵字，顯示不同的提示文字
+        if keyword:
+            result_html += f"<h3 style='color: #007bff;'>本次搜尋找到 {count} 部電影</h3>"
+        else:
+            result_html += f"<h3 style='color: #28a745;'>以下為資料庫中所有電影</h3>"
+            
+        result_html += f"<p style='color: gray; font-size: 14px;'>資料庫最後更新時間：{last_update_str}</p><hr>"
+        result_html += movie_results_html 
+    else:
+        result_html += f"<p style='color: red;'>資料庫中找不到與「<strong>{keyword}</strong>」相關的電影。</p>"
+        
+    return result_html
 
 @app.route("/spiderMovie")
 def spiderMovie():
