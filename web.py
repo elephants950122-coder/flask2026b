@@ -38,7 +38,72 @@ def index():
     link += "<a href='/spiderMovie'>爬取即將上映電影並存入資料庫</a><hr>"
     link += "<a href='/searchMovie'>從資料庫搜尋電影</a><hr>"
     link += "<a href='/road'>台中市十大肇事路口</a><hr>"
+    link += "<a href='/weather'>最新天氣預報查詢</a><hr>"
     return link
+
+@app.route("/weather", methods=["GET", "POST"])
+def weather():
+    # 建立搜尋表單與置中樣式
+    search_form = """
+    <style>
+        body {
+            text-align: center;
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 30px auto;
+        }
+        input, button {
+            padding: 8px;
+            font-size: 16px;
+        }
+    </style>
+    <h2>最新天氣預報查詢</h2>
+    <form action="/weather" method="POST"> 
+        <input type="text" name="city" placeholder="請輸入完整縣市 (如：臺中市)" style="width: 60%;">
+        <button type="submit" style="cursor: pointer;">查詢</button>
+    </form>
+    <br><a href="/" style="text-decoration: none; color: gray;">← 回首頁</a>
+    <hr>
+    """
+
+    # 使用你原本的變數 R 來組合字串
+    R = search_form
+    city = ""
+    
+    # 透過 POST 抓取輸入的縣市
+    if request.method == "POST":
+        city = request.form.get("city", "")
+    
+    # 如果沒輸入 (例如剛進網頁)，就直接回傳表單
+    if not city:
+        return R
+
+    # 以下使用你原本的變數與邏輯
+    city = city.replace("台", "臺")
+    url = "https://opendata.cwa.gov.tw/api/v1/rest/datastore/F-C0032-001?Authorization=rdec-key-123-45678-011121314&format=JSON&locationName=" + city
+    
+    try:
+        Data = requests.get(url)
+        JsonData = json.loads(Data.text)
+        
+        # 簡單檢查一下有沒有抓到該縣市的資料 (防呆)
+        if not JsonData.get("records", {}).get("location", []):
+            R += f"<p style='color: red;'>找不到「<strong>{city}</strong>」的天氣資料，請確認是否輸入完整的縣市。</p>"
+        else:
+            # 使用你原本的變數結構
+            R += "<h3 style='color: #007bff;'>" + JsonData["records"]["location"][0]["locationName"] + " 最新天氣預報</h3>"
+            
+            Weather = json.loads(Data.text)["records"]["location"][0]["weatherElement"][0]["time"][0]["parameter"]["parameterName"]
+            Rain = json.loads(Data.text)["records"]["location"][0]["weatherElement"][1]["time"][0]["parameter"]["parameterName"]
+            
+            # 將結果排版後加進 R
+            R += f"<p style='font-size: 18px;'>目前天氣：<b>{Weather}</b></p>"
+            R += f"<p style='font-size: 18px;'>降雨機率：<b style='color: #d9534f;'>{Rain}%</b></p>"
+
+    except Exception as e:
+        R += f"<p style='color: red;'>發生錯誤：{str(e)}</p>"
+
+    return R
 
 @app.route("/road")
 def road():
