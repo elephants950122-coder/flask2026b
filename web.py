@@ -74,7 +74,7 @@ def webhook():
             # 比對 Dialogflow 傳來的分級是否包含在資料庫的 rate 欄位中
             if rate in movie_data.get("rate", ""):
                 result += "🎬 片名：" + movie_data.get("title", "") + "\n"
-                result += "🔗 介紹：" + movie_data.get("hyperlink", "") + "\n\n"
+                #result += "🔗 介紹：" + movie_data.get("hyperlink", "") + "\n\n"
                 count += 1
         
         # 判斷有沒有找到符合條件的電影
