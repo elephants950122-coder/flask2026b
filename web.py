@@ -2,7 +2,7 @@ import os
 import json
 import requests
 from bs4 import BeautifulSoup
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, make_response, jsonify
 from datetime import datetime
 import firebase_admin
 from firebase_admin import credentials, firestore
@@ -41,6 +41,16 @@ def index():
     link += "<a href='/weather'>最新天氣預報查詢</a><hr>"
     link += "<a href='/rate'>本週新片進DB</a><hr>"
     return link
+
+@app.route("/webhook", methods=["POST"])
+def webhook():
+    # build a request object
+    req = request.get_json(force=True)
+    # fetch queryResult from json
+    action =  req.get("queryResult").get("action")
+    msg =  req.get("queryResult").get("queryText")
+    info = "動作：" + action + "； 查詢內容：" + msg
+    return make_response(jsonify({"fulfillmentText": info}))
 
 @app.route("/rate")
 def rate():
@@ -254,6 +264,7 @@ def searchMovie():
         
     return result_html
 
+
 @app.route("/spiderMovie")
 def spiderMovie():
     R = ""
@@ -293,7 +304,7 @@ def spiderMovie():
     R += "網站最近更新日期" + lastUpdate + "<br>"
     R += "總共爬取" + str(total) + "部電影到資料庫"
 
-    return R
+    return R + "<a href='/'>回首頁</a>"
 
 
 @app.route("/movie1")
@@ -357,7 +368,7 @@ def movie1():
     except Exception as e:
         result_html += f"爬蟲發生錯誤：{str(e)}"
         
-    return result_html
+    return result_html + "<a href='/'>回首頁</a>"
 
 
 @app.route("/spider")
@@ -371,7 +382,7 @@ def spider():
 
     for link in course_links:
         result_html += link.text + link.get("href", "") + "<br>"
-    return result_html
+    return result_html + "<a href='/'>回首頁</a>"
 
 
 @app.route("/search", methods=["GET", "POST"])
@@ -391,7 +402,7 @@ def search():
                 if keyword in teacher.get("name", ""):
                     results.append(teacher)
     
-    return render_template("search.html", results=results, keyword=keyword)
+    return render_template("search.html", results=results, keyword=keyword) + "<a href='/'>回首頁</a>"
 
 
 @app.route("/read2")
@@ -409,7 +420,7 @@ def read2():
 
     if result_html == "":
         result_html = "抱歉，查無此關鍵字姓名之老師資料"    
-    return result_html
+    return result_html + "<a href='/'>回首頁</a>"
 
 
 @app.route("/read")
@@ -420,7 +431,7 @@ def read():
     docs = collection_ref.order_by("lab", direction=firestore.Query.DESCENDING).get()    
     for doc in docs:         
         result_html += str(doc.to_dict()) + "<br>"    
-    return result_html
+    return result_html + "<a href='/'>回首頁</a>"
 
 
 @app.route("/mis")
