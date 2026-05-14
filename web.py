@@ -41,7 +41,48 @@ def index():
     link += "<a href='/weather'>最新天氣預報查詢</a><hr>"
     link += "<a href='/rate'>本週新片進DB</a><hr>"
     link += "<a href='/webhook'>webhook</a><hr>"
+    link += "<a href='/webhook3'>webhook列出相關分級電影</a><hr>"
     return link
+
+@app.route("/webhook3", methods=["POST"])
+def webhook3():
+    # 取得 Dialogflow 傳來的請求資料
+    req = request.get_json(force=True)
+    action = req.get("queryResult").get("action")
+    
+    # 先設定一個預設的回覆，避免程式遇到不認識的 action 時當機
+    info = "抱歉，我目前無法處理這個動作喔！"
+    
+    if action == "rateChoice":
+        # 取得使用者輸入的分級 (Dialogflow 已經轉換為標準名稱，例如 "保護級")
+        rate = req.get("queryResult").get("parameters").get("rate", "")
+
+        info = "我是林建宇開發的電影聊天機器人，您查詢的分級是：" + rate + "，本週相關電影有：\n\n"
+        
+        db = firestore.client()
+        # ⚠️ 這裡的集合名稱必須與你在 /rate 爬蟲時存入的名稱完全一致！
+        collection_ref = db.collection("本週新片含分級") 
+        docs = collection_ref.get()
+        
+        result = ""
+        count = 0
+        
+        # 開始比對資料庫
+        for doc in docs:
+            movie_data = doc.to_dict()
+            # 直接使用 Dialogflow 傳來的 rate 欄位比對資料庫中的 rate
+            if rate in movie_data.get("rate", ""):
+                result += "🎬 片名：" + movie_data.get("title", "") + "\n"
+                result += "🔗 介紹：" + movie_data.get("hyperlink", "") + "\n\n"
+                count += 1
+        
+        # 判斷有沒有找到電影
+        if count > 0:
+            info += result
+        else:
+            info += "目前資料庫中找不到符合此分級的電影喔！"
+            
+    return make_response(jsonify({"fulfillmentText": info}))
 
 @app.route("/webhook", methods=["POST"])
 def webhook():
