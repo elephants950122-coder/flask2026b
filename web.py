@@ -43,6 +43,7 @@ def index():
     link += "<a href='/road'>台中市十大肇事路口</a><hr>"
     link += "<a href='/weather'>最新天氣預報查詢</a><hr>"
     link += "<a href='/rate'>本週新片進DB</a><hr>"
+    link += "<a href='/webhook'>webhook</a><hr>"
     link += "<a href='/webdemo'>聊天機器人</a><hr>"
     link += "<a href='/AI'>AI</a><hr>"
     link += "<a href='/ask'>ask</a><hr>"
@@ -119,10 +120,11 @@ def webhook():
                 count += 1
         
         # 判斷有沒有找到符合條件的電影
-        if count > 0:
-            info += result
-        else:
-            info += "目前資料庫中找不到符合此分級的電影喔！"
+        info += result
+
+        elif (action == "input.unknown"):
+            info =  req["queryResult"]["queryText"]
+
 
     # 將整理好的字串包裝成 Dialogflow 看得懂的 JSON 格式回傳
     return make_response(jsonify({"fulfillmentText": info}))
