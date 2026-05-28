@@ -7,6 +7,7 @@ from datetime import datetime
 import firebase_admin
 from firebase_admin import credentials, firestore
 from google import genai
+from google.genai import types
 
 # 判斷是在 Vercel 還是本地
 if os.path.exists('serviceAccountKey.json'):
@@ -66,7 +67,7 @@ def ask():
 
     else:    
         # 當使用者直接打開網頁 (GET) 時，顯示輸入框畫面
-        return render_template("ask.html")
+        return render_template("ask.html") + "<a href='/'>回首頁</a>"
 
 
 @app.route("/AI")
@@ -78,7 +79,7 @@ def AI():
     )
     
     # 回傳生成的文字
-    return response.text
+    return response.text + "<a href='/'>回首頁</a>"
 
 @app.route("/webdemo")
 def webdemo():
@@ -122,8 +123,8 @@ def webhook():
         # 判斷有沒有找到符合條件的電影
         info += result
 
-        elif (action == "input.unknown"):
-            info =  req["queryResult"]["queryText"]
+    elif (action == "input.unknown"):
+        info =  req["queryResult"]["queryText"]
 
 
     # 將整理好的字串包裝成 Dialogflow 看得懂的 JSON 格式回傳
