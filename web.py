@@ -78,7 +78,7 @@ def ask():
             return "請輸入內容", 400
         try:
             response = client.models.generate_content(
-                model='gemini-3.5-flash',
+                model='gemini-3.1-flash-lite',
                 contents=user_prompt,
             )
             return response.text
@@ -157,7 +157,7 @@ def webhook():
             system_instruction=instruction_text
         )
         response = client.models.generate_content(
-            model='gemini-3.1-flash-lite', 
+            model='gemini-3.5-flash', 
             contents=req["queryResult"]["queryText"],
             config=ai_config,
         )
