@@ -22,8 +22,6 @@ firebase_admin.initialize_app(cred)
 
 app = Flask(__name__)
 
-# 在全域（函式外面）建立 Client 物件，只初始化一次即可，不用每次初始化
-api_key = 'AIzaSyAta1jds_xeFt9qJcAs2rsN97FRRTv3V4c'
 client = genai.Client()
 
 @app.route("/")
