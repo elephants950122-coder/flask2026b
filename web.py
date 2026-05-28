@@ -48,7 +48,27 @@ def index():
     link += "<a href='/webdemo'>聊天機器人</a><hr>"
     link += "<a href='/AI'>AI</a><hr>"
     link += "<a href='/ask'>ask</a><hr>"
+    link += "<a href='/message'>message</a><hr>"
     return link
+
+@app.route('/message', methods=['GET', 'POST']) 
+def message():
+    if request.method == "POST":
+        user_prompt = request.form.get('prompt', '')
+        if not user_prompt:
+            return "請輸入內容", 400
+        try:
+            response = client.models.generate_content(
+                model='gemini-3.5-flash',
+                contents=user_prompt,
+            )
+            return response.text
+        except Exception as e:
+            return f"發生錯誤: {str(e)}", 500
+
+    else:    
+        # 當使用者直接打開網頁 (GET) 時，顯示輸入框畫面
+        return render_template("message.html") + "<a href='/'>回首頁</a>"
 
 @app.route('/ask', methods=['GET', 'POST']) 
 def ask():
@@ -125,7 +145,7 @@ def webhook():
 
     elif (action == "input.unknown"):
         #info =  req["queryResult"]["queryText"]
-        
+
         instruction_text = (
             "你是一個熱心且知識豐富的專業智慧助理。"
             "對於使用者的提問，請回覆重點的關鍵字，不要重述問題。"         
