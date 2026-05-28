@@ -59,7 +59,7 @@ def message():
             return "請輸入內容", 400
         try:
             response = client.models.generate_content(
-                model='gemini-3.5-flash',
+                model='gemini-3.1-flash-lite',
                 contents=user_prompt,
             )
             return response.text
@@ -94,7 +94,7 @@ def ask():
 def AI():
     # 每次使用者拜訪該路徑時，直接使用全域的 client 呼叫模型
     response = client.models.generate_content(
-        model='gemini-3.5-flash',
+        model='gemini-3.1-flash-lite',
         contents='我想查詢靜宜大學資管系的評價？',
     )
     
@@ -157,7 +157,7 @@ def webhook():
             system_instruction=instruction_text
         )
         response = client.models.generate_content(
-            model='gemini-3.5-flash', 
+            model='gemini-3.1-flash-lite', 
             contents=req["queryResult"]["queryText"],
             config=ai_config,
         )
